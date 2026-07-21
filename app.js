@@ -742,7 +742,7 @@ async function recognizeHandwriting(strokes, w, h) {
 function renderCandidates(cands, chosen) {
   const box = $("#candidates");
   box.innerHTML = "";
-  box.appendChild(el("span", "cand-label", "Սխա՞լ է։ Սեղմիր քո նկարած նշանը՝"));
+  box.appendChild(el("span", "cand-label", "Ընտրիր քո գրած կանջին"));
   const row = el("div", "cand-row");
   cands.slice(0, 10).forEach((c) => {
     const b = el("button", "cand-btn" + (c === chosen ? " active" : ""), esc(c));
