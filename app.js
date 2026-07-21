@@ -594,18 +594,18 @@ function setupDrawPad() {
       y: Math.round((e.clientY - r.top) * (canvas.height / r.height)),
     };
   }
-  canvas.addEventListener("pointerdown", (e) => {
+  function start(e) {
+    if (drawing) return;            // ignore extra fingers
     e.preventDefault();
     drawing = true;
-    canvas.setPointerCapture(e.pointerId);
     const p = pos(e);
     current = { x: [p.x], y: [p.y] };
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
     ctx.lineTo(p.x + 0.1, p.y + 0.1);
     ctx.stroke();
-  });
-  canvas.addEventListener("pointermove", (e) => {
+  }
+  function move(e) {
     if (!drawing) return;
     e.preventDefault();
     const p = pos(e);
@@ -613,15 +613,18 @@ function setupDrawPad() {
     current.y.push(p.y);
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
-  });
-  const stop = () => {
+  }
+  function stop() {
     if (drawing && current && current.x.length) strokes.push(current);
     drawing = false;
     current = null;
-  };
-  canvas.addEventListener("pointerup", stop);
-  canvas.addEventListener("pointerleave", stop);
-  canvas.addEventListener("pointercancel", stop);
+  }
+  // Start on the canvas; track move/end on the whole window so a stroke never
+  // gets cut off and the pad keeps accepting new strokes forever.
+  canvas.addEventListener("pointerdown", start);
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", stop);
+  window.addEventListener("pointercancel", stop);
 
   $("#draw-clear").addEventListener("click", () => {
     clearPad();
