@@ -103,33 +103,44 @@ async function jotoba(query) {
   return j;
 }
 
-/* example COMPOUND words: contain this kanji next to at least one other kanji */
-async function getExamples(ch, exclude) {
+/* example COMPOUND words (2+ kanji) that use this kanji, from kanjiapi.dev.
+   kanjiapi lists thousands of compounds and marks common ones via "priorities". */
+async function getExamples(ch) {
   try {
-    const j = await jotoba(ch);
-    const out = [];
-    for (const w of j.words || []) {
-      const written = (w.reading && w.reading.kanji) || (w.reading && w.reading.kana);
-      if (!written || !written.includes(ch)) continue;
-      // require 2+ kanji so the kanji always sits beside another kanji
-      if ([...written].filter(isKanji).length < 2) continue;
-      if (exclude && written === exclude) continue;
-      const sense = (w.senses || [])[0];
-      const gloss = sense ? (sense.glosses || []).slice(0, 3).join(", ") : "";
-      out.push({
-        written,
-        reading: (w.reading && w.reading.kana) || "",
-        meaning: gloss,
-        common: !!w.common,
-      });
-      if (out.length >= 8) break;
+    const r = await fetch("https://kanjiapi.dev/v1/words/" + encodeURIComponent(ch));
+    if (r.ok) {
+      const data = await r.json();
+      const out = [];
+      const seen = new Set();
+      for (const entry of data) {
+        const meaning = ((entry.meanings && entry.meanings[0] && entry.meanings[0].glosses) || [])
+          .slice(0, 3).join(", ");
+        for (const v of entry.variants || []) {
+          const written = v.written || "";
+          if (!written.includes(ch)) continue;
+          if ([...written].filter(isKanji).length < 2) continue; // 2+ kanji
+          if (written.length > 4) continue;                       // keep short & common-looking
+          if (seen.has(written)) continue;
+          seen.add(written);
+          out.push({
+            written,
+            reading: v.pronounced || "",
+            meaning,
+            common: v.priorities && v.priorities.length ? 1 : 0,
+            allKanji: [...written].every(isKanji) ? 1 : 0,
+            len: written.length,
+          });
+          break; // one variant per entry
+        }
+      }
+      // common first, then all-kanji compounds, then shorter words
+      out.sort((a, b) => (b.common - a.common) || (b.allKanji - a.allKanji) || (a.len - b.len));
+      if (out.length) return out.slice(0, 4);
     }
-    // prefer common words, keep at least two
-    out.sort((a, b) => (b.common ? 1 : 0) - (a.common ? 1 : 0));
-    return out.slice(0, 4);
   } catch (e) {
-    return [];
+    /* fall through */
   }
+  return [];
 }
 
 /* whole-word meaning from Jotoba */
