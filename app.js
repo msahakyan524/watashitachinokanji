@@ -385,6 +385,78 @@ const ocrStatus = $("#ocr-status");
 const ocrReview = $("#ocr-review");
 const ocrText = $("#ocr-text");
 
+/* Clean a photo so Tesseract can read it: right size, pure black & white,
+   white border. This is the single biggest accuracy win for kanji. */
+function preprocess(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // scale so the longer side is ~1400px (enlarge tiny photos, shrink huge ones)
+      const target = 1400;
+      const scale = target / Math.max(img.width, img.height);
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const pad = Math.round(Math.max(w, h) * 0.15); // white margin
+
+      const canvas = document.createElement("canvas");
+      canvas.width = w + pad * 2;
+      canvas.height = h + pad * 2;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, pad, pad, w, h);
+
+      // grayscale + average brightness
+      const imgData = ctx.getImageData(pad, pad, w, h);
+      const px = imgData.data;
+      let sum = 0;
+      for (let i = 0; i < px.length; i += 4) {
+        const g = (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) | 0;
+        px[i] = px[i + 1] = px[i + 2] = g;
+        sum += g;
+      }
+      // threshold a little below the mean -> crisp black text on white
+      const mean = sum / (px.length / 4);
+      const thr = mean * 0.82;
+      for (let i = 0; i < px.length; i += 4) {
+        const v = px[i] < thr ? 0 : 255;
+        px[i] = px[i + 1] = px[i + 2] = v;
+      }
+      ctx.putImageData(imgData, pad, pad);
+      resolve(canvas);
+    };
+    img.onerror = () => reject(new Error("could not open that image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// page-segmentation modes to try, in order: single block, then single character
+const PSM_TRIES = ["6", "10"];
+
+async function recognizeKanji(canvas) {
+  const worker = await Tesseract.createWorker("jpn", 1, {
+    logger: (m) => {
+      if (m.status === "recognizing text") {
+        ocrStatus.innerHTML = '<span class="spin"></span>Reading… ' + Math.round(m.progress * 100) + "%";
+      }
+    },
+  });
+  try {
+    let best = "";
+    for (const psm of PSM_TRIES) {
+      await worker.setParameters({ tessedit_pageseg_mode: psm });
+      const { data } = await worker.recognize(canvas);
+      const clean = (data.text || "").replace(/\s+/g, "");
+      const kanjiCount = [...clean].filter(isKanji).length;
+      if (kanjiCount > [...best].filter(isKanji).length) best = clean;
+      if (kanjiCount > 0 && psm === "6") break; // block mode already found kanji
+    }
+    return best;
+  } finally {
+    await worker.terminate();
+  }
+}
+
 async function handleImage(file) {
   if (!file || !file.type.startsWith("image/")) return;
   previewPanel.classList.remove("hidden");
@@ -395,26 +467,24 @@ async function handleImage(file) {
   results.innerHTML = "";
 
   try {
+    const canvas = await preprocess(file);
+    previewImg.src = canvas.toDataURL(); // show the cleaned image we actually read
     await loadScript(TESSERACT_URL);
     if (typeof Tesseract === "undefined") throw new Error("text-reader could not load (check your internet)");
     ocrStatus.innerHTML = '<span class="spin"></span>Reading the characters from your image…';
-    const { data } = await Tesseract.recognize(file, "jpn", {
-      logger: (m) => {
-        if (m.status === "recognizing text") {
-          ocrStatus.innerHTML = '<span class="spin"></span>Reading… ' + Math.round(m.progress * 100) + "%";
-        }
-      },
-    });
-    const clean = (data.text || "").replace(/\s+/g, "");
-    ocrStatus.textContent = clean ? "Here’s what I read:" : "I couldn’t read any characters — try a clearer, closer photo.";
-    if (clean) {
-      ocrText.value = clean;
-      ocrReview.classList.remove("hidden");
-      analyze(clean); // show results right away; user can still fix + re-run
-    }
+
+    const clean = await recognizeKanji(canvas);
+    const hasKanji = [...clean].some(isKanji);
+    ocrStatus.textContent = hasKanji
+      ? "Here’s what I read — fix it if needed:"
+      : "I couldn’t clearly read a kanji. Type it in the box below, or try a sharper, straight-on photo.";
+    ocrText.value = clean;
+    ocrReview.classList.remove("hidden");
+    if (hasKanji) analyze(clean); // show results right away; user can still fix + re-run
   } catch (e) {
     ocrStatus.className = "status error";
     ocrStatus.textContent = "Couldn’t read the image: " + e.message;
+    ocrReview.classList.remove("hidden");
   }
 }
 
