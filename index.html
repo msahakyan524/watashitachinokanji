@@ -6,7 +6,7 @@
 <title>Kanji Reader</title>
 <link rel="preconnect" href="https://kanjiapi.dev">
 <link rel="preconnect" href="https://jotoba.de">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <header class="site-head">
@@ -56,6 +56,7 @@
     <section class="panel hidden" id="preview-panel">
       <img id="preview-img" alt="Your image">
       <div id="ocr-status" class="status"></div>
+      <div id="candidates" class="candidates hidden"></div>
       <div id="ocr-review" class="hidden">
         <label class="review-label" for="ocr-text">Recognised text — fix any mistakes, then analyze:</label>
         <div class="type-fields">
@@ -78,6 +79,6 @@
 
   <!-- Only our own tiny script loads up front, so the page ALWAYS appears.
        The big helper libraries are fetched later, only when needed. -->
-  <script src="app.js?v=3" defer></script>
+  <script src="app.js?v=4" defer></script>
 </body>
 </html>

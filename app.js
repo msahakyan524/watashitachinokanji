@@ -500,55 +500,147 @@ async function handleImage(file) {
   }
 }
 
-/* ---------- draw-a-kanji pad (reads the finished picture, so stroke order
-   does NOT matter) ---------- */
+/* ---------- handwriting recognition (Google input tools) ---------- */
+async function recognizeHandwriting(strokes, w, h) {
+  const ink = strokes.map((s) => [s.x, s.y]);
+  const body = {
+    options: "enable_pre_space",
+    requests: [{
+      writing_guide: { writing_area_width: w, writing_area_height: h },
+      ink,
+      language: "ja",
+      max_num_results: 10,
+    }],
+  };
+  const r = await fetch(
+    "https://inputtools.google.com/request?ime=handwriting&app=mobilesearch&cs=1&oe=UTF-8",
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+  );
+  if (!r.ok) throw new Error("recogniser unreachable (" + r.status + ")");
+  const j = await r.json();
+  if (j[0] !== "SUCCESS") throw new Error("could not read the drawing");
+  const cands = (j[1] && j[1][0] && j[1][0][1]) || [];
+  // put kanji guesses first, keep the rest as backups
+  return cands.sort((a, b) => {
+    const ak = [...a].some(isKanji) ? 0 : 1;
+    const bk = [...b].some(isKanji) ? 0 : 1;
+    return ak - bk;
+  });
+}
+
+/* show the guesses as tappable buttons; tapping one analyses it */
+function renderCandidates(cands, chosen) {
+  const box = $("#candidates");
+  box.innerHTML = "";
+  box.appendChild(el("span", "cand-label", "Not right? Tap the character you drew:"));
+  const row = el("div", "cand-row");
+  cands.slice(0, 10).forEach((c) => {
+    const b = el("button", "cand-btn" + (c === chosen ? " active" : ""), esc(c));
+    b.type = "button";
+    b.lang = "ja";
+    b.addEventListener("click", () => {
+      [...row.children].forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      ocrText.value = c;
+      analyze(c);
+    });
+    row.appendChild(b);
+  });
+  box.appendChild(row);
+  box.classList.remove("hidden");
+}
+
+/* ---------- draw-a-kanji pad (uses the finished strokes; the correct kanji
+   appears in the guess list whatever order you draw in) ---------- */
 function setupDrawPad() {
   const canvas = $("#draw-canvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
+  let strokes = [];
+  let current = null;
 
-  function reset() {
+  function clearPad() {
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.lineWidth = 14;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#111";
+    strokes = [];
+    current = null;
   }
-  reset();
+  clearPad();
 
-  let drawing = false, hasInk = false;
+  let drawing = false;
   function pos(e) {
     const r = canvas.getBoundingClientRect();
     return {
-      x: (e.clientX - r.left) * (canvas.width / r.width),
-      y: (e.clientY - r.top) * (canvas.height / r.height),
+      x: Math.round((e.clientX - r.left) * (canvas.width / r.width)),
+      y: Math.round((e.clientY - r.top) * (canvas.height / r.height)),
     };
   }
   canvas.addEventListener("pointerdown", (e) => {
     e.preventDefault();
-    drawing = true; hasInk = true;
+    drawing = true;
     canvas.setPointerCapture(e.pointerId);
     const p = pos(e);
-    ctx.beginPath(); ctx.moveTo(p.x, p.y);
-    ctx.lineTo(p.x + 0.1, p.y + 0.1); ctx.stroke();
+    current = { x: [p.x], y: [p.y] };
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x + 0.1, p.y + 0.1);
+    ctx.stroke();
   });
   canvas.addEventListener("pointermove", (e) => {
     if (!drawing) return;
     e.preventDefault();
     const p = pos(e);
-    ctx.lineTo(p.x, p.y); ctx.stroke();
+    current.x.push(p.x);
+    current.y.push(p.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
   });
-  const stop = () => { drawing = false; };
+  const stop = () => {
+    if (drawing && current && current.x.length) strokes.push(current);
+    drawing = false;
+    current = null;
+  };
   canvas.addEventListener("pointerup", stop);
   canvas.addEventListener("pointerleave", stop);
   canvas.addEventListener("pointercancel", stop);
 
-  $("#draw-clear").addEventListener("click", reset);
-  $("#draw-read").addEventListener("click", () => {
-    if (!hasInk) { ocrStatus && (ocrStatus.textContent = "Draw a kanji first, then tap Read."); previewPanel.classList.remove("hidden"); ocrStatus.className = "status"; return; }
-    const cleaned = cleanForOCR(canvas, canvas.width, canvas.height);
-    runOCR(cleaned);
+  $("#draw-clear").addEventListener("click", () => {
+    clearPad();
+    $("#candidates").classList.add("hidden");
+  });
+
+  $("#draw-read").addEventListener("click", async () => {
+    previewPanel.classList.remove("hidden");
+    $("#candidates").classList.add("hidden");
+    ocrReview.classList.add("hidden");
+    ocrStatus.className = "status";
+    previewImg.src = canvas.toDataURL();
+    if (!strokes.length) {
+      ocrStatus.textContent = "Draw a kanji first, then tap “Read this kanji”.";
+      return;
+    }
+    ocrStatus.innerHTML = '<span class="spin"></span>Recognising your drawing…';
+    results.innerHTML = "";
+    try {
+      const cands = await recognizeHandwriting(strokes, canvas.width, canvas.height);
+      if (!cands.length) {
+        ocrStatus.textContent = "Couldn’t recognise that. Try drawing it a bit bigger and clearer.";
+        return;
+      }
+      const primary = cands[0];
+      ocrStatus.textContent = "I think you drew:";
+      ocrText.value = primary;
+      ocrReview.classList.remove("hidden");
+      renderCandidates(cands, primary);
+      analyze(primary);
+    } catch (e) {
+      ocrStatus.className = "status error";
+      ocrStatus.textContent = "Couldn’t recognise the drawing: " + e.message;
+    }
   });
 }
 setupDrawPad();
