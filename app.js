@@ -765,24 +765,54 @@ function setupDrawPad() {
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   let strokes = [];
+  let redo = [];        // strokes removed by "one step back", ready to re-add
   let current = null;
   const drawStatus = $("#draw-status");
   function showCount() {
-    if (drawStatus) drawStatus.textContent = "Strokes drawn: " + strokes.length;
+    if (drawStatus) drawStatus.textContent = "Գծերի քանակը՝ " + strokes.length;
   }
 
-  function clearPad() {
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  function setStyle() {
     ctx.lineWidth = 14;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#111";
-    strokes = [];
-    current = null;
+  }
+  // wipe the canvas and paint every stored stroke again
+  function redraw() {
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    setStyle();
+    for (const s of strokes) {
+      ctx.beginPath();
+      ctx.moveTo(s.x[0], s.y[0]);
+      for (let i = 1; i < s.x.length; i++) ctx.lineTo(s.x[i], s.y[i]);
+      // a single dot still shows
+      if (s.x.length === 1) ctx.lineTo(s.x[0] + 0.1, s.y[0] + 0.1);
+      ctx.stroke();
+    }
     showCount();
   }
+
+  function clearPad() {
+    strokes = [];
+    redo = [];
+    current = null;
+    redraw();
+  }
   clearPad();
+
+  function undo() {
+    if (!strokes.length) return;
+    redo.push(strokes.pop());
+    current = null;
+    redraw();
+  }
+  function redoStep() {
+    if (!redo.length) return;
+    strokes.push(redo.pop());
+    redraw();
+  }
 
   let drawing = false;
   function pos(e) {
@@ -794,6 +824,7 @@ function setupDrawPad() {
   }
   function start(e) {
     e.preventDefault();
+    redo = []; // drawing something new clears the "step forward" history
     // if a previous stroke never got a finger-lift, finalise it so we never
     // get stuck refusing new strokes
     if (drawing && current && current.x.length) { strokes.push(current); showCount(); }
@@ -830,6 +861,8 @@ function setupDrawPad() {
     clearPad();
     $("#candidates").classList.add("hidden");
   });
+  $("#draw-undo").addEventListener("click", undo);
+  $("#draw-redo").addEventListener("click", redoStep);
 
   $("#draw-read").addEventListener("click", async () => {
     previewPanel.classList.remove("hidden");
