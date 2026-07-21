@@ -1394,6 +1394,7 @@ function openEditSet(set) {
   $("#edit-add-grid").innerHTML = "";
   addSel = new Set();
   $("#edit-add-words").checked = false;
+  $("#edit-set-words").checked = false;
   document.querySelectorAll(".add-lvl").forEach((x) => x.classList.remove("active"));
   $("#edit-name").value = set.name;
   renderEditItems();
@@ -1503,6 +1504,28 @@ $("#edit-save").addEventListener("click", () => {
   goBack();
 });
 $("#edit-back").addEventListener("click", goBack);
+
+/* tickmark: add words made of the kanji already in the set (level-matched) */
+$("#edit-set-words").addEventListener("change", async (e) => {
+  if (!e.target.checked) return;
+  const cb = e.target;
+  cb.disabled = true;
+  const kanjis = editState.items.filter((it) => it.type === "kanji");
+  let added = 0;
+  for (const k of kanjis) {
+    const allowed = k.level ? await allowedKanjiForLevel(String(k.level)) : null;
+    const ex = await getExamples(k.ja, allowed);
+    ex.forEach((w) => {
+      if (!editState.items.some((it) => it.type === "word" && it.ja === w.written)) {
+        editState.items.push({ type: "word", ja: w.written, reading: w.reading, meaning: w.meaning, known: null });
+        added++;
+      }
+    });
+  }
+  cb.disabled = false;
+  renderEditItems();
+  toast("Ավելացվեց " + added + " բառ");
+});
 
 $("#flashcard").addEventListener("click", flipCard);
 $("#flip-card").addEventListener("click", flipCard);
