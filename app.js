@@ -1106,19 +1106,41 @@ function starBtn(item, extraCls) {
   return b;
 }
 
+/* ---- browser Back/Forward navigation between screens ----
+   Each screen we open pushes an entry; the browser Back arrow (or an in-app
+   "back" button via goBack) pops it and closes that screen. */
+const views = [];
+function pushView(closer) {
+  views.push(closer);
+  try { history.pushState({ d: views.length }, ""); } catch (e) {}
+}
+function goBack() {
+  if (views.length) { try { history.back(); return; } catch (e) {} }
+  const c = views.pop(); if (c) c();
+}
+window.addEventListener("popstate", (e) => {
+  const target = (e.state && e.state.d) || 0;
+  while (views.length > target) { const c = views.pop(); if (c) c(); }
+});
+
 /* ---- open / close ---- */
-function openFlash() {
+function showFlashUI() {
   document.body.classList.add("flash-mode");
   $("#study").classList.add("hidden");
   $("#set-edit").classList.add("hidden");
+  $("#edit-add").classList.add("hidden");
   $("#set-list").style.display = "";
   $("#new-set").style.display = "";
   renderSetList();
   window.scrollTo(0, 0);
 }
+function openFlash() {
+  showFlashUI();
+  pushView(() => { document.body.classList.remove("flash-mode"); });
+}
 function closeFlash() { document.body.classList.remove("flash-mode"); }
 $("#open-flashcards").addEventListener("click", openFlash);
-$("#flash-close").addEventListener("click", closeFlash);
+$("#flash-close").addEventListener("click", goBack);
 
 /* ---- set list ---- */
 function renderSetList() {
@@ -1284,7 +1306,7 @@ $("#create-set").addEventListener("click", async () => {
 
 /* ---- study mode (flip cards) ---- */
 let study = { items: [], idx: 0, set: null, title: "" };
-function startStudy(items, title, setRef) {
+function startStudy(items, title, setRef, noPush) {
   study = { items, idx: 0, set: setRef || null, title };
   $("#study-done").classList.add("hidden");
   $("#flashcard").classList.remove("hidden");
@@ -1293,6 +1315,7 @@ function startStudy(items, title, setRef) {
   $("#study").classList.remove("hidden");
   showCard();
   window.scrollTo(0, 0);
+  if (!noPush) pushView(() => { $("#study").classList.add("hidden"); renderSetList(); });
 }
 function showCard() {
   const fc = $("#flashcard");
@@ -1319,13 +1342,13 @@ function showCard() {
   back.appendChild(el("p", "fc-hint", "Սեղմիր նշանին՝ ամբողջական էջի համար"));
 }
 
-/* open the full dictionary page for a kanji/word (leaves flashcards) */
+/* open the full dictionary page for a kanji/word; Back returns to flashcards */
 function openDetail(ja) {
-  closeFlash();
-  $("#study").classList.add("hidden");
+  document.body.classList.remove("flash-mode");
   analyze(ja);
   const r = $("#results");
   if (r) setTimeout(() => r.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+  pushView(() => { document.body.classList.add("flash-mode"); window.scrollTo(0, 0); });
 }
 function flipCard() { $("#flashcard").classList.toggle("flipped"); }
 function markCard(known) {
@@ -1351,12 +1374,12 @@ function finishStudy() {
   if (unknown.length) {
     const again = el("button", "btn btn-primary", "Կրկնել չիմացածները (" + unknown.length + ")");
     again.type = "button";
-    again.addEventListener("click", () => startStudy(unknown.map((x) => ({ ...x, known: null })), study.title + " · կրկնում", study.set));
+    again.addEventListener("click", () => startStudy(unknown.map((x) => ({ ...x, known: null })), study.title + " · կրկնում", study.set, true));
     done.appendChild(again);
   }
   const back = el("button", "btn", "Դեպի հավաքածուներ");
   back.type = "button";
-  back.addEventListener("click", () => { $("#study").classList.add("hidden"); renderSetList(); });
+  back.addEventListener("click", goBack);
   done.appendChild(back);
 }
 /* ---- edit a set (rename + remove cards) ---- */
@@ -1374,6 +1397,7 @@ function openEditSet(set) {
   $("#edit-name").value = set.name;
   renderEditItems();
   window.scrollTo(0, 0);
+  pushView(() => closeEditUI());
 }
 function renderEditItems() {
   const box = $("#edit-items");
@@ -1395,7 +1419,7 @@ function renderEditItems() {
     box.appendChild(row);
   });
 }
-function closeEdit() {
+function closeEditUI() {
   $("#set-edit").classList.add("hidden");
   $("#edit-add").classList.add("hidden");
   $("#edit-add-grid").innerHTML = "";
@@ -1461,15 +1485,15 @@ $("#edit-save").addEventListener("click", () => {
   const name = $("#edit-name").value.trim() || editState.name;
   saveSets(loadSets().map((s) => (s.id === editState.id ? { ...s, name, items: editState.items } : s)));
   toast("Պահպանվեց");
-  closeEdit();
+  goBack();
 });
-$("#edit-back").addEventListener("click", closeEdit);
+$("#edit-back").addEventListener("click", goBack);
 
 $("#flashcard").addEventListener("click", flipCard);
 $("#flip-card").addEventListener("click", flipCard);
 $("#mark-known").addEventListener("click", () => markCard(true));
 $("#mark-unknown").addEventListener("click", () => markCard(false));
-$("#study-back").addEventListener("click", () => { $("#study").classList.add("hidden"); renderSetList(); });
+$("#study-back").addEventListener("click", goBack);
 
 renderSetList();
 
