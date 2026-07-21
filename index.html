@@ -6,7 +6,7 @@
 <title>Kanji Reader</title>
 <link rel="preconnect" href="https://kanjiapi.dev">
 <link rel="preconnect" href="https://jotoba.de">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <header class="site-head">
@@ -42,7 +42,8 @@
         <span class="type-label">…or draw one kanji with your finger:</span>
         <p class="draw-hint">Draw it however you like — the order of your strokes doesn’t matter.</p>
         <div class="draw-wrap">
-          <canvas id="draw-canvas" width="320" height="320" aria-label="Drawing area"></canvas>
+          <canvas id="draw-canvas" width="320" height="320" aria-label="Drawing area"
+                  style="width:280px;height:280px;max-width:100%;background:#fff;border:2px solid #c9c6d6;border-radius:16px;touch-action:none;cursor:crosshair"></canvas>
         </div>
         <div class="btn-row draw-btns">
           <button type="button" class="btn" id="draw-clear">Clear</button>
@@ -77,6 +78,6 @@
 
   <!-- Only our own tiny script loads up front, so the page ALWAYS appears.
        The big helper libraries are fetched later, only when needed. -->
-  <script src="app.js" defer></script>
+  <script src="app.js?v=3" defer></script>
 </body>
 </html>
