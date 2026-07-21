@@ -1227,8 +1227,7 @@ async function allowedKanjiForLevel(lvl) {
 async function loadLevel(lvl, btn) {
   document.querySelectorAll(".lvl-btn").forEach((b) => b.classList.toggle("active", b === btn));
   currentLevel = lvl;
-  selectedKanji = new Set();
-  updateCreateBtn();
+  // keep any kanji already selected from other levels
   const grid = $("#kanji-grid");
   grid.innerHTML = '<p class="notice">Բեռնում…</p>';
   try {
@@ -1236,7 +1235,7 @@ async function loadLevel(lvl, btn) {
     const chars = await r.json();
     grid.innerHTML = "";
     chars.forEach((ch) => {
-      const t = el("div", "kg-tile", '<span lang="ja">' + esc(ch) + "</span>");
+      const t = el("div", "kg-tile" + (selectedKanji.has(ch) ? " sel" : ""), '<span lang="ja">' + esc(ch) + "</span>");
       t.dataset.ch = ch;
       t.addEventListener("pointerdown", (e) => {
         if (e.pointerType === "mouse") {
@@ -1254,7 +1253,7 @@ async function loadLevel(lvl, btn) {
       });
       grid.appendChild(t);
     });
-    $("#pick-hint").textContent = "Սեղմիր կանջիների վրա (կամ մկնիկով քաշիր՝ շարքն ընտրելու համար) — " + chars.length + " կանջի։";
+    $("#pick-hint").textContent = "Կարող ես ընտրել տարբեր մակարդակներից՝ ընտրվածը պահվում է։ Ընտրված՝ " + selectedKanji.size + "։";
   } catch (e) {
     grid.innerHTML = '<p class="notice">Չհաջողվեց բեռնել մակարդակը։</p>';
   }
@@ -1274,8 +1273,17 @@ $("#create-set").addEventListener("click", async () => {
   const btn = $("#create-set");
   btn.disabled = true;
   btn.textContent = "Ստեղծում…";
-  // words may only use kanji from this level or easier
-  const allowed = addWords ? await allowedKanjiForLevel(currentLevel || "5") : null;
+  // words may only use kanji up to the HARDEST level among the chosen kanji
+  // (N3=3 is hardest, N5=5 easiest), plus everything easier.
+  let allowed = null;
+  if (addWords) {
+    let hardest = 5;
+    for (const lvl of [3, 4, 5]) {
+      const list = new Set(await jlptList(String(lvl)));
+      for (const ch of chosen) if (list.has(ch)) hardest = Math.min(hardest, lvl);
+    }
+    allowed = await allowedKanjiForLevel(String(hardest));
+  }
   const items = [];
   for (const ch of chosen) {
     const info = await getKanji(ch);
