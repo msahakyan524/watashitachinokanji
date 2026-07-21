@@ -119,7 +119,7 @@ async function jotoba(query) {
 
 /* example COMPOUND words (2+ kanji) that use this kanji, from kanjiapi.dev.
    kanjiapi lists thousands of compounds and marks common ones via "priorities". */
-async function getExamples(ch) {
+async function getExamples(ch, allowedSet) {
   try {
     const r = await fetch("https://kanjiapi.dev/v1/words/" + encodeURIComponent(ch));
     if (r.ok) {
@@ -134,6 +134,8 @@ async function getExamples(ch) {
           if (!written.includes(ch)) continue;
           if ([...written].filter(isKanji).length < 2) continue; // 2+ kanji
           if (written.length > 4) continue;                       // keep short & common-looking
+          // if a level limit is given, every kanji must be within it (or easier)
+          if (allowedSet && ![...written].filter(isKanji).every((c) => allowedSet.has(c))) continue;
           if (seen.has(written)) continue;
           seen.add(written);
           out.push({
@@ -1161,8 +1163,30 @@ function renderSetList() {
 
 /* ---- new set: level picker + kanji grid ---- */
 let selectedKanji = new Set();
+let currentLevel = null;
+
+/* set of kanji allowed for a level = that level plus all EASIER ones
+   (N5 is easiest). So N5 -> only N5; N4 -> N4+N5; N3 -> N3+N4+N5. */
+const jlptListCache = new Map();
+async function jlptList(lvl) {
+  if (jlptListCache.has(lvl)) return jlptListCache.get(lvl);
+  let arr = [];
+  try { const r = await fetch("https://kanjiapi.dev/v1/kanji/jlpt-" + lvl); if (r.ok) arr = await r.json(); } catch (e) {}
+  jlptListCache.set(lvl, arr);
+  return arr;
+}
+async function allowedKanjiForLevel(lvl) {
+  const n = parseInt(lvl, 10);
+  const set = new Set();
+  for (let L = 5; L >= n; L--) {
+    (await jlptList(L)).forEach((c) => set.add(c));
+  }
+  return set;
+}
+
 async function loadLevel(lvl, btn) {
   document.querySelectorAll(".lvl-btn").forEach((b) => b.classList.toggle("active", b === btn));
+  currentLevel = lvl;
   selectedKanji = new Set();
   updateCreateBtn();
   const grid = $("#kanji-grid");
@@ -1200,6 +1224,8 @@ $("#create-set").addEventListener("click", async () => {
   const btn = $("#create-set");
   btn.disabled = true;
   btn.textContent = "Ստեղծում…";
+  // words may only use kanji from this level or easier
+  const allowed = addWords ? await allowedKanjiForLevel(currentLevel || "5") : null;
   const items = [];
   for (const ch of chosen) {
     const info = await getKanji(ch);
@@ -1208,7 +1234,7 @@ $("#create-set").addEventListener("click", async () => {
       items.push({ type: "kanji", ja: ch, reading, meaning: (info.meanings || []).join(", "), level: info.jlpt || null, known: null });
     }
     if (addWords) {
-      const ex = await getExamples(ch);
+      const ex = await getExamples(ch, allowed);
       ex.forEach((w) => items.push({ type: "word", ja: w.written, reading: w.reading, meaning: w.meaning, known: null }));
     }
   }
