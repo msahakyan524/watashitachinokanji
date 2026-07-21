@@ -657,6 +657,54 @@ async function handleImage(file) {
   }
 }
 
+/* ---------- live camera (Google-Lens-style: aim, then tap to read) ---------- */
+let camStream = null;
+async function openCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    toast("Այս զննարկիչը կենդանի տեսախցիկ չի աջակցում");
+    return;
+  }
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } },
+      audio: false,
+    });
+    const v = $("#cam-video");
+    v.srcObject = camStream;
+    await v.play();
+    $("#cam-start").classList.add("hidden");
+    $("#cam-live").classList.remove("hidden");
+  } catch (e) {
+    toast("Տեսախցիկը հասանելի չէ — թույլ տուր մուտքը");
+  }
+}
+function stopCamera() {
+  if (camStream) { camStream.getTracks().forEach((t) => t.stop()); camStream = null; }
+  const v = $("#cam-video");
+  if (v) v.srcObject = null;
+  const live = $("#cam-live"), start = $("#cam-start");
+  if (live) live.classList.add("hidden");
+  if (start) start.classList.remove("hidden");
+}
+async function shootCamera() {
+  const v = $("#cam-video");
+  if (!v || !v.videoWidth) { toast("Տեսախցիկը դեռ պատրաստ չէ"); return; }
+  const c = document.createElement("canvas");
+  c.width = v.videoWidth;
+  c.height = v.videoHeight;
+  c.getContext("2d").drawImage(v, 0, 0);
+  previewPanel.classList.remove("hidden");
+  ocrStatus.className = "status";
+  ocrStatus.innerHTML = '<span class="spin"></span>Մաքրում եմ պատկերը…';
+  try {
+    const cleaned = cleanForOCR(c, c.width, c.height);
+    await runOCR(cleaned);
+  } catch (e) {
+    ocrStatus.className = "status error";
+    ocrStatus.textContent = "Չհաջողվեց կարդալ՝ " + e.message;
+  }
+}
+
 /* ---------- handwriting recognition (Google input tools) ---------- */
 async function recognizeHandwriting(strokes, w, h) {
   const ink = strokes.map((s) => [s.x, s.y]);
@@ -818,6 +866,9 @@ setupDrawPad();
 /* ---------- wiring ---------- */
 $("#file-input").addEventListener("change", (e) => handleImage(e.target.files[0]));
 $("#camera-input").addEventListener("change", (e) => handleImage(e.target.files[0]));
+$("#cam-open").addEventListener("click", openCamera);
+$("#cam-stop").addEventListener("click", stopCamera);
+$("#cam-shot").addEventListener("click", shootCamera);
 $("#analyze-btn").addEventListener("click", () => analyze($("#text-input").value));
 $("#text-input").addEventListener("keydown", (e) => { if (e.key === "Enter") analyze(e.target.value); });
 $("#ocr-analyze-btn").addEventListener("click", () => analyze(ocrText.value));
@@ -852,6 +903,7 @@ function setupTabs() {
   function show(name) {
     tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
     Object.entries(panels).forEach(([k, p]) => p && p.classList.toggle("hidden", k !== name));
+    if (name !== "photo") stopCamera(); // free the camera when leaving the tab
     try { sessionStorage.setItem("mk_tab", name); } catch (e) {}
   }
   tabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.tab)));

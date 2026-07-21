@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="favicon.svg?v=1">
 <link rel="preconnect" href="https://kanjiapi.dev">
 <link rel="preconnect" href="https://jotoba.de">
-<link rel="stylesheet" href="style.css?v=19">
+<link rel="stylesheet" href="style.css?v=20">
 </head>
 <body>
   <div class="sakura" aria-hidden="true">
@@ -68,12 +68,26 @@
         </label>
       </div>
 
-      <!-- Take photo -->
+      <!-- Take photo / live camera -->
       <div class="tab-panel hidden" id="tab-photo">
-        <label class="file-field">
-          <span class="file-text">Լուսանկարիր<small>հեռախոսում բացում է տեսախցիկը</small></span>
-          <input type="file" accept="image/*" capture="environment" id="camera-input">
-        </label>
+        <div id="cam-start">
+          <button type="button" class="btn btn-primary cam-open-btn" id="cam-open">Բացել կենդանի տեսախցիկը</button>
+          <p class="cam-hint">Ուղղիր բառին ու սեղմիր «Կարդալ հիմա»։</p>
+          <label class="file-field">
+            <span class="file-text">Կամ լուսանկարիր<small>ընտրիր կամ լուսանկարիր նկար</small></span>
+            <input type="file" accept="image/*" capture="environment" id="camera-input">
+          </label>
+        </div>
+        <div id="cam-live" class="hidden">
+          <div class="cam-frame">
+            <video id="cam-video" playsinline muted></video>
+            <div class="cam-reticle" aria-hidden="true"></div>
+          </div>
+          <div class="btn-row cam-btns">
+            <button type="button" class="btn" id="cam-stop">Փակել</button>
+            <button type="button" class="btn btn-primary" id="cam-shot">Կարդալ հիմա</button>
+          </div>
+        </div>
       </div>
 
       <!-- Type -->
@@ -122,6 +136,6 @@
        Ձեռագիրը ճանաչում է Google-ը։ Ամբողջությամբ աշխատում է քո browser-ում։</p>
   </footer>
 
-  <script src="app.js?v=19" defer></script>
+  <script src="app.js?v=20" defer></script>
 </body>
 </html>
