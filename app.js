@@ -749,8 +749,10 @@ async function recognizeHandwriting(strokes, w, h) {
   const j = await r.json();
   if (j[0] !== "SUCCESS") throw new Error("չհաջողվեց կարդալ նկարածը");
   const raw = (j[1] && j[1][0] && j[1][0][1]) || [];
-  // keep ONLY fully-Japanese guesses; if none qualify, return nothing (show none)
-  const jp = raw.filter((c) => c && [...c].every((ch) => isJapanese(ch)));
+  // odd symbols that count as "CJK" but aren't real study kanji (e.g. 卍/卐 manji)
+  const BLOCKED = new Set(["卍", "卐", "〆", "々", "〇", "ヶ", "ヵ"]);
+  // keep ONLY fully-Japanese guesses with no blocked symbols
+  const jp = raw.filter((c) => c && [...c].every((ch) => isJapanese(ch) && !BLOCKED.has(ch)));
   // kanji first, then kana
   return jp.sort((a, b) => {
     const ak = [...a].some(isKanji) ? 0 : 1;
