@@ -600,8 +600,10 @@ function setupDrawPad() {
     };
   }
   function start(e) {
-    if (drawing) return;            // ignore extra fingers
     e.preventDefault();
+    // if a previous stroke never got a finger-lift, finalise it so we never
+    // get stuck refusing new strokes
+    if (drawing && current && current.x.length) { strokes.push(current); showCount(); }
     drawing = true;
     const p = pos(e);
     current = { x: [p.x], y: [p.y] };
@@ -695,6 +697,6 @@ window.addEventListener("error", (e) => {
   }
 });
 
-/* Quietly load the optional grammar helper a few seconds after the page is
-   ready, so passive-verb detection works later WITHOUT ever blocking a tap. */
-setTimeout(warmUpTokenizer, 4000);
+/* NOTE: the heavy 15MB grammar dictionary is intentionally NOT loaded — it made
+   phones freeze mid-drawing and the page crawl. Kanji lookup works without it.
+   (warmUpTokenizer stays available if we ever add a lightweight opt-in later.) */
