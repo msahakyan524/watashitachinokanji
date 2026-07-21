@@ -340,7 +340,7 @@ async function renderKanji(ch, container) {
   card.appendChild(top);
 
   // examples
-  card.appendChild(el("p", "section-title", "Օրինակ բառեր"));
+  card.appendChild(el("p", "section-title", "Գործածությամբ բառերի օրինակներ"));
   if (examples.length) {
     const ul = el("ul", "examples");
     for (const ex of examples) {
