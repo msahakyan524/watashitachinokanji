@@ -727,12 +727,11 @@ async function recognizeHandwriting(strokes, w, h) {
   if (!r.ok) throw new Error("ճանաչիչն անհասանելի է (" + r.status + ")");
   const j = await r.json();
   if (j[0] !== "SUCCESS") throw new Error("չհաջողվեց կարդալ նկարածը");
-  let cands = (j[1] && j[1][0] && j[1][0][1]) || [];
-  // keep ONLY Japanese guesses — never show Latin letters like "T" or "+"
-  const jp = cands.filter((c) => [...c].every((ch) => isJapanese(ch)));
-  if (jp.length) cands = jp;
+  const raw = (j[1] && j[1][0] && j[1][0][1]) || [];
+  // keep ONLY fully-Japanese guesses; if none qualify, return nothing (show none)
+  const jp = raw.filter((c) => c && [...c].every((ch) => isJapanese(ch)));
   // kanji first, then kana
-  return cands.sort((a, b) => {
+  return jp.sort((a, b) => {
     const ak = [...a].some(isKanji) ? 0 : 1;
     const bk = [...b].some(isKanji) ? 0 : 1;
     return ak - bk;
