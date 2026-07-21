@@ -1393,6 +1393,7 @@ function openEditSet(set) {
   $("#edit-add").classList.add("hidden");
   $("#edit-add-grid").innerHTML = "";
   addSel = new Set();
+  $("#edit-add-words").checked = false;
   document.querySelectorAll(".add-lvl").forEach((x) => x.classList.remove("active"));
   $("#edit-name").value = set.name;
   renderEditItems();
@@ -1430,6 +1431,7 @@ function closeEditUI() {
 
 /* ---- add more kanji to the set being edited ---- */
 let addSel = new Set();
+let addLevel = null;
 function updateAddConfirm() {
   const b = $("#edit-add-confirm");
   b.disabled = addSel.size === 0;
@@ -1437,6 +1439,7 @@ function updateAddConfirm() {
 }
 async function loadAddLevel(lvl, btn) {
   document.querySelectorAll(".add-lvl").forEach((b) => b.classList.toggle("active", b === btn));
+  addLevel = lvl;
   addSel = new Set();
   updateAddConfirm();
   const grid = $("#edit-add-grid");
@@ -1465,15 +1468,27 @@ $("#edit-add-confirm").addEventListener("click", async () => {
   const b = $("#edit-add-confirm");
   b.disabled = true;
   b.textContent = "Ավելացնում…";
+  const addWords = $("#edit-add-words").checked;
+  const allowed = addWords ? await allowedKanjiForLevel(addLevel || "5") : null;
   for (const ch of chosen) {
-    if (editState.items.some((it) => it.type === "kanji" && it.ja === ch)) continue;
-    const info = await getKanji(ch);
-    if (info) {
-      const reading = [...(info.on || []), ...(info.kun || [])].join("・");
-      editState.items.push({ type: "kanji", ja: ch, reading, meaning: (info.meanings || []).join(", "), level: info.jlpt || null, known: null });
+    if (!editState.items.some((it) => it.type === "kanji" && it.ja === ch)) {
+      const info = await getKanji(ch);
+      if (info) {
+        const reading = [...(info.on || []), ...(info.kun || [])].join("・");
+        editState.items.push({ type: "kanji", ja: ch, reading, meaning: (info.meanings || []).join(", "), level: info.jlpt || null, known: null });
+      }
+    }
+    if (addWords) {
+      const ex = await getExamples(ch, allowed);
+      ex.forEach((w) => {
+        if (!editState.items.some((it) => it.type === "word" && it.ja === w.written)) {
+          editState.items.push({ type: "word", ja: w.written, reading: w.reading, meaning: w.meaning, known: null });
+        }
+      });
     }
   }
   addSel = new Set();
+  $("#edit-add-words").checked = false;
   $("#edit-add").classList.add("hidden");
   $("#edit-add-grid").innerHTML = "";
   document.querySelectorAll(".add-lvl").forEach((x) => x.classList.remove("active"));
