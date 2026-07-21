@@ -385,46 +385,46 @@ const ocrStatus = $("#ocr-status");
 const ocrReview = $("#ocr-review");
 const ocrText = $("#ocr-text");
 
-/* Clean a photo so Tesseract can read it: right size, pure black & white,
-   white border. This is the single biggest accuracy win for kanji. */
+/* Clean any picture (photo OR drawing) so Tesseract can read it: right size,
+   pure black & white, white border. Works on an <img> or a <canvas>. */
+function cleanForOCR(drawable, srcW, srcH) {
+  const target = 1400;
+  const scale = target / Math.max(srcW, srcH);
+  const w = Math.max(1, Math.round(srcW * scale));
+  const h = Math.max(1, Math.round(srcH * scale));
+  const pad = Math.round(Math.max(w, h) * 0.15); // white margin
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w + pad * 2;
+  canvas.height = h + pad * 2;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(drawable, pad, pad, w, h);
+
+  const imgData = ctx.getImageData(pad, pad, w, h);
+  const px = imgData.data;
+  let sum = 0;
+  for (let i = 0; i < px.length; i += 4) {
+    const g = (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) | 0;
+    px[i] = px[i + 1] = px[i + 2] = g;
+    sum += g;
+  }
+  const mean = sum / (px.length / 4);
+  const thr = mean * 0.82;
+  for (let i = 0; i < px.length; i += 4) {
+    const v = px[i] < thr ? 0 : 255;
+    px[i] = px[i + 1] = px[i + 2] = v;
+  }
+  ctx.putImageData(imgData, pad, pad);
+  return canvas;
+}
+
+/* load an image file, then clean it */
 function preprocess(file) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => {
-      // scale so the longer side is ~1400px (enlarge tiny photos, shrink huge ones)
-      const target = 1400;
-      const scale = target / Math.max(img.width, img.height);
-      const w = Math.max(1, Math.round(img.width * scale));
-      const h = Math.max(1, Math.round(img.height * scale));
-      const pad = Math.round(Math.max(w, h) * 0.15); // white margin
-
-      const canvas = document.createElement("canvas");
-      canvas.width = w + pad * 2;
-      canvas.height = h + pad * 2;
-      const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, pad, pad, w, h);
-
-      // grayscale + average brightness
-      const imgData = ctx.getImageData(pad, pad, w, h);
-      const px = imgData.data;
-      let sum = 0;
-      for (let i = 0; i < px.length; i += 4) {
-        const g = (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) | 0;
-        px[i] = px[i + 1] = px[i + 2] = g;
-        sum += g;
-      }
-      // threshold a little below the mean -> crisp black text on white
-      const mean = sum / (px.length / 4);
-      const thr = mean * 0.82;
-      for (let i = 0; i < px.length; i += 4) {
-        const v = px[i] < thr ? 0 : 255;
-        px[i] = px[i + 1] = px[i + 2] = v;
-      }
-      ctx.putImageData(imgData, pad, pad);
-      resolve(canvas);
-    };
+    img.onload = () => resolve(cleanForOCR(img, img.width, img.height));
     img.onerror = () => reject(new Error("could not open that image"));
     img.src = URL.createObjectURL(file);
   });
@@ -457,27 +457,25 @@ async function recognizeKanji(canvas) {
   }
 }
 
-async function handleImage(file) {
-  if (!file || !file.type.startsWith("image/")) return;
+/* shared: take an already-cleaned canvas, read it, show the result */
+async function runOCR(cleanCanvas) {
   previewPanel.classList.remove("hidden");
-  previewImg.src = URL.createObjectURL(file);
+  previewImg.src = cleanCanvas.toDataURL(); // show exactly what we read
   ocrReview.classList.add("hidden");
   ocrStatus.className = "status";
   ocrStatus.innerHTML = '<span class="spin"></span>Getting the text-reader ready…';
   results.innerHTML = "";
 
   try {
-    const canvas = await preprocess(file);
-    previewImg.src = canvas.toDataURL(); // show the cleaned image we actually read
     await loadScript(TESSERACT_URL);
     if (typeof Tesseract === "undefined") throw new Error("text-reader could not load (check your internet)");
-    ocrStatus.innerHTML = '<span class="spin"></span>Reading the characters from your image…';
+    ocrStatus.innerHTML = '<span class="spin"></span>Reading the character…';
 
-    const clean = await recognizeKanji(canvas);
+    const clean = await recognizeKanji(cleanCanvas);
     const hasKanji = [...clean].some(isKanji);
     ocrStatus.textContent = hasKanji
       ? "Here’s what I read — fix it if needed:"
-      : "I couldn’t clearly read a kanji. Type it in the box below, or try a sharper, straight-on photo.";
+      : "I couldn’t clearly read a kanji. Type it in the box below, or try again bigger and clearer.";
     ocrText.value = clean;
     ocrReview.classList.remove("hidden");
     if (hasKanji) analyze(clean); // show results right away; user can still fix + re-run
@@ -487,6 +485,73 @@ async function handleImage(file) {
     ocrReview.classList.remove("hidden");
   }
 }
+
+async function handleImage(file) {
+  if (!file || !file.type.startsWith("image/")) return;
+  previewPanel.classList.remove("hidden");
+  ocrStatus.className = "status";
+  ocrStatus.innerHTML = '<span class="spin"></span>Cleaning up your image…';
+  try {
+    const canvas = await preprocess(file);
+    await runOCR(canvas);
+  } catch (e) {
+    ocrStatus.className = "status error";
+    ocrStatus.textContent = "Couldn’t open the image: " + e.message;
+  }
+}
+
+/* ---------- draw-a-kanji pad (reads the finished picture, so stroke order
+   does NOT matter) ---------- */
+function setupDrawPad() {
+  const canvas = $("#draw-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  function reset() {
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = 14;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#111";
+  }
+  reset();
+
+  let drawing = false, hasInk = false;
+  function pos(e) {
+    const r = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - r.left) * (canvas.width / r.width),
+      y: (e.clientY - r.top) * (canvas.height / r.height),
+    };
+  }
+  canvas.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    drawing = true; hasInk = true;
+    canvas.setPointerCapture(e.pointerId);
+    const p = pos(e);
+    ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x + 0.1, p.y + 0.1); ctx.stroke();
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!drawing) return;
+    e.preventDefault();
+    const p = pos(e);
+    ctx.lineTo(p.x, p.y); ctx.stroke();
+  });
+  const stop = () => { drawing = false; };
+  canvas.addEventListener("pointerup", stop);
+  canvas.addEventListener("pointerleave", stop);
+  canvas.addEventListener("pointercancel", stop);
+
+  $("#draw-clear").addEventListener("click", reset);
+  $("#draw-read").addEventListener("click", () => {
+    if (!hasInk) { ocrStatus && (ocrStatus.textContent = "Draw a kanji first, then tap Read."); previewPanel.classList.remove("hidden"); ocrStatus.className = "status"; return; }
+    const cleaned = cleanForOCR(canvas, canvas.width, canvas.height);
+    runOCR(cleaned);
+  });
+}
+setupDrawPad();
 
 /* ---------- wiring ---------- */
 $("#file-input").addEventListener("change", (e) => handleImage(e.target.files[0]));

@@ -137,6 +137,21 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; }
 }
 .type-fields input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+/* Draw pad */
+.draw-hint { margin: 0 0 12px; color: var(--ink-soft); font-size: 14px; }
+.draw-wrap { display: flex; justify-content: center; }
+#draw-canvas {
+  width: 280px;
+  height: 280px;
+  max-width: 100%;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  touch-action: none;         /* let finger draw instead of scrolling */
+  cursor: crosshair;
+}
+.draw-btns { margin-top: 12px; }
+
 /* Preview */
 #preview-img {
   max-width: 100%;

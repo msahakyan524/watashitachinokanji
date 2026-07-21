@@ -37,6 +37,18 @@
           <button class="btn btn-primary" id="analyze-btn">Analyze</button>
         </div>
       </div>
+
+      <div class="type-row">
+        <span class="type-label">…or draw one kanji with your finger:</span>
+        <p class="draw-hint">Draw it however you like — the order of your strokes doesn’t matter.</p>
+        <div class="draw-wrap">
+          <canvas id="draw-canvas" width="320" height="320" aria-label="Drawing area"></canvas>
+        </div>
+        <div class="btn-row draw-btns">
+          <button type="button" class="btn" id="draw-clear">Clear</button>
+          <button type="button" class="btn btn-primary" id="draw-read">Read this kanji</button>
+        </div>
+      </div>
     </section>
 
     <!-- Preview + OCR status -->
