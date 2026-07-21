@@ -260,6 +260,9 @@ body.flash-mode #flash-view { display: block; }
   cursor: pointer; width: 36px; height: 36px; line-height: 1;
 }
 .edit-rm:hover { color: #e74c3c; }
+.edit-actions { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+#edit-add { border-top: 1px solid var(--line); padding-top: 12px; margin-bottom: 12px; }
+#edit-add-confirm { margin-top: 8px; }
 
 /* Study */
 .study-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }

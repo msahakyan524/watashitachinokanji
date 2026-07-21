@@ -1367,6 +1367,10 @@ function openEditSet(set) {
   $("#new-set").style.display = "none";
   $("#study").classList.add("hidden");
   $("#set-edit").classList.remove("hidden");
+  $("#edit-add").classList.add("hidden");
+  $("#edit-add-grid").innerHTML = "";
+  addSel = new Set();
+  document.querySelectorAll(".add-lvl").forEach((x) => x.classList.remove("active"));
   $("#edit-name").value = set.name;
   renderEditItems();
   window.scrollTo(0, 0);
@@ -1393,10 +1397,66 @@ function renderEditItems() {
 }
 function closeEdit() {
   $("#set-edit").classList.add("hidden");
+  $("#edit-add").classList.add("hidden");
+  $("#edit-add-grid").innerHTML = "";
   $("#set-list").style.display = "";
   $("#new-set").style.display = "";
   renderSetList();
 }
+
+/* ---- add more kanji to the set being edited ---- */
+let addSel = new Set();
+function updateAddConfirm() {
+  const b = $("#edit-add-confirm");
+  b.disabled = addSel.size === 0;
+  b.textContent = addSel.size ? "Ավելացնել ընտրվածները (" + addSel.size + ")" : "Ավելացնել ընտրվածները";
+}
+async function loadAddLevel(lvl, btn) {
+  document.querySelectorAll(".add-lvl").forEach((b) => b.classList.toggle("active", b === btn));
+  addSel = new Set();
+  updateAddConfirm();
+  const grid = $("#edit-add-grid");
+  grid.innerHTML = '<p class="notice">Բեռնում…</p>';
+  const chars = await jlptList(lvl);
+  grid.innerHTML = "";
+  chars.forEach((ch) => {
+    const already = editState.items.some((it) => it.type === "kanji" && it.ja === ch);
+    const t = el("div", "kg-tile" + (already ? " sel" : ""), '<span lang="ja">' + esc(ch) + "</span>");
+    if (already) { t.title = "Արդեն ավելացված է"; grid.appendChild(t); return; }
+    t.addEventListener("click", () => {
+      if (addSel.has(ch)) { addSel.delete(ch); t.classList.remove("sel"); }
+      else { addSel.add(ch); t.classList.add("sel"); }
+      updateAddConfirm();
+    });
+    grid.appendChild(t);
+  });
+}
+$("#edit-add-btn").addEventListener("click", () => {
+  $("#edit-add").classList.toggle("hidden");
+});
+document.querySelectorAll(".add-lvl").forEach((b) => b.addEventListener("click", () => loadAddLevel(b.dataset.lvl, b)));
+$("#edit-add-confirm").addEventListener("click", async () => {
+  const chosen = [...addSel];
+  if (!chosen.length) return;
+  const b = $("#edit-add-confirm");
+  b.disabled = true;
+  b.textContent = "Ավելացնում…";
+  for (const ch of chosen) {
+    if (editState.items.some((it) => it.type === "kanji" && it.ja === ch)) continue;
+    const info = await getKanji(ch);
+    if (info) {
+      const reading = [...(info.on || []), ...(info.kun || [])].join("・");
+      editState.items.push({ type: "kanji", ja: ch, reading, meaning: (info.meanings || []).join(", "), level: info.jlpt || null, known: null });
+    }
+  }
+  addSel = new Set();
+  $("#edit-add").classList.add("hidden");
+  $("#edit-add-grid").innerHTML = "";
+  document.querySelectorAll(".add-lvl").forEach((x) => x.classList.remove("active"));
+  updateAddConfirm();
+  renderEditItems();
+  toast("Ավելացվեց " + chosen.length + " կանջի");
+});
 $("#edit-save").addEventListener("click", () => {
   const name = $("#edit-name").value.trim() || editState.name;
   saveSets(loadSets().map((s) => (s.id === editState.id ? { ...s, name, items: editState.items } : s)));

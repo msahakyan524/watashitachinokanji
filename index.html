@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="favicon.svg?v=1">
 <link rel="preconnect" href="https://kanjiapi.dev">
 <link rel="preconnect" href="https://jotoba.de">
-<link rel="stylesheet" href="style.css?v=39">
+<link rel="stylesheet" href="style.css?v=40">
 </head>
 <body>
   <div class="sakura" aria-hidden="true">
@@ -91,6 +91,20 @@
         <input type="text" id="edit-name" class="set-name" autocomplete="off">
         <p class="edit-label">Քարտեր (սեղմիր ✕՝ հեռացնելու համար)</p>
         <div id="edit-items" class="edit-items"></div>
+
+        <div class="edit-actions">
+          <button type="button" class="btn" id="edit-add-btn">ավելացնել կանջիներ</button>
+        </div>
+        <div id="edit-add" class="hidden">
+          <div class="level-row">
+            <button type="button" class="btn lvl-btn add-lvl" data-lvl="5">N5</button>
+            <button type="button" class="btn lvl-btn add-lvl" data-lvl="4">N4</button>
+            <button type="button" class="btn lvl-btn add-lvl" data-lvl="3">N3</button>
+          </div>
+          <div id="edit-add-grid" class="kanji-grid"></div>
+          <button type="button" class="btn btn-primary" id="edit-add-confirm" disabled>Ավելացնել ընտրվածները</button>
+        </div>
+
         <button type="button" class="btn btn-primary" id="edit-save">Պահպանել</button>
       </div>
     </section>
@@ -196,6 +210,6 @@
        Ձեռագիրը ճանաչում է Google-ը։ Ամբողջությամբ աշխատում է քո browser-ում։</p>
   </footer>
 
-  <script src="app.js?v=39" defer></script>
+  <script src="app.js?v=40" defer></script>
 </body>
 </html>
