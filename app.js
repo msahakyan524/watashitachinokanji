@@ -1165,6 +1165,24 @@ function renderSetList() {
 let selectedKanji = new Set();
 let currentLevel = null;
 
+/* mouse drag-select over the kanji grid */
+let gridDrag = false;
+let gridMode = "add";
+function applyTile(t) {
+  const ch = t.dataset.ch;
+  if (!ch) return;
+  if (gridMode === "add") { selectedKanji.add(ch); t.classList.add("sel"); }
+  else { selectedKanji.delete(ch); t.classList.remove("sel"); }
+  updateCreateBtn();
+}
+window.addEventListener("pointermove", (e) => {
+  if (!gridDrag) return;
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const tile = under && under.closest && under.closest(".kg-tile");
+  if (tile) applyTile(tile);
+});
+window.addEventListener("pointerup", () => { gridDrag = false; });
+
 /* set of kanji allowed for a level = that level plus all EASIER ones
    (N5 is easiest). So N5 -> only N5; N4 -> N4+N5; N3 -> N3+N4+N5. */
 const jlptListCache = new Map();
@@ -1197,14 +1215,24 @@ async function loadLevel(lvl, btn) {
     grid.innerHTML = "";
     chars.forEach((ch) => {
       const t = el("div", "kg-tile", '<span lang="ja">' + esc(ch) + "</span>");
-      t.addEventListener("click", () => {
-        if (selectedKanji.has(ch)) { selectedKanji.delete(ch); t.classList.remove("sel"); }
-        else { selectedKanji.add(ch); t.classList.add("sel"); }
-        updateCreateBtn();
+      t.dataset.ch = ch;
+      t.addEventListener("pointerdown", (e) => {
+        if (e.pointerType === "mouse") {
+          // mouse: start a drag-select; the first tile decides add vs remove
+          e.preventDefault();
+          gridDrag = true;
+          gridMode = selectedKanji.has(ch) ? "remove" : "add";
+          applyTile(t);
+        } else {
+          // touch/pen: simple tap toggle (so the list still scrolls)
+          if (selectedKanji.has(ch)) { selectedKanji.delete(ch); t.classList.remove("sel"); }
+          else { selectedKanji.add(ch); t.classList.add("sel"); }
+          updateCreateBtn();
+        }
       });
       grid.appendChild(t);
     });
-    $("#pick-hint").textContent = "Սեղմիր կանջիների վրա՝ ընտրելու համար (" + chars.length + " կանջի)։";
+    $("#pick-hint").textContent = "Սեղմիր կանջիների վրա (կամ մկնիկով քաշիր՝ շարքն ընտրելու համար) — " + chars.length + " կանջի։";
   } catch (e) {
     grid.innerHTML = '<p class="notice">Չհաջողվեց բեռնել մակարդակը։</p>';
   }
