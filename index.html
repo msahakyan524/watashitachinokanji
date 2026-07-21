@@ -6,7 +6,7 @@
 <title>Միննա の 漢字</title>
 <link rel="preconnect" href="https://kanjiapi.dev">
 <link rel="preconnect" href="https://jotoba.de">
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
   <div class="sakura" aria-hidden="true">
@@ -18,23 +18,23 @@
   </div>
 
   <header class="site-head">
-    <h1 lang="ja">🌸 Միննա の 漢字</h1>
-    <p class="tagline">Գրիր մատիկով, վերբեռնիր, լուսանկարիր կամ մուտքագրիր ճապոներեն։ Ստացիր յուրաքանչյուր կանջիի իմաստը, ընթերցելու տարբերակներն ու stroke-երի հերթականությունը։</p>
+    <h1 lang="ja">Միննա の 漢字</h1>
+    <p class="tagline">Գրիր (մատիկով), վերբեռնիր, լուսանկարիր կամ մուտքագրիր ճապոներեն։ Ստացիր յուրաքանչյուր կանջիի իմաստը, ընթերցելու տարբերակներն ու stroke-ների հերթականությունը։</p>
   </header>
 
   <main>
     <section class="panel" id="input-panel">
       <!-- Tabs (upper left) -->
       <div class="tabs" role="tablist">
-        <button type="button" class="tab active" data-tab="draw">✍️ Գրել մատիկով</button>
-        <button type="button" class="tab" data-tab="upload">🖼️ Վերբեռնել</button>
-        <button type="button" class="tab" data-tab="photo">📷 Լուսանկարել</button>
-        <button type="button" class="tab" data-tab="type">⌨️ Մուտքագրել</button>
+        <button type="button" class="tab active" data-tab="draw">Գրել մատիկով</button>
+        <button type="button" class="tab" data-tab="upload">Վերբեռնել</button>
+        <button type="button" class="tab" data-tab="photo">Լուսանկարել</button>
+        <button type="button" class="tab" data-tab="type">Մուտքագրել</button>
       </div>
 
       <!-- Draw with finger -->
       <div class="tab-panel" id="tab-draw">
-        <p class="draw-hint">Նկարիր մեկ կանջի ինչպես ուզում ես — գծերի հերթականությունը կարևոր չէ։</p>
+        <p class="draw-hint">Գրիր մեկ կանջի ինչպես ուզում ես — գծերի հերթականությունը կարևոր չէ։</p>
         <div class="draw-wrap">
           <canvas id="draw-canvas" width="320" height="320" aria-label="Նկարելու տարածք"
                   style="width:280px;height:280px;max-width:100%;background:#fff;border:2px solid #c9c6d6;border-radius:16px;touch-action:none;cursor:crosshair"></canvas>
@@ -49,7 +49,6 @@
       <!-- Upload picture -->
       <div class="tab-panel hidden" id="tab-upload">
         <label class="file-field" id="drop">
-          <span class="file-emoji">🖼️</span>
           <span class="file-text">Ընտրիր նկար<small>ընտրիր նկար այս սարքից</small></span>
           <input type="file" accept="image/*" id="file-input">
         </label>
@@ -58,7 +57,6 @@
       <!-- Take photo -->
       <div class="tab-panel hidden" id="tab-photo">
         <label class="file-field">
-          <span class="file-emoji">📷</span>
           <span class="file-text">Լուսանկարիր<small>հեռախոսում բացում է տեսախցիկը</small></span>
           <input type="file" accept="image/*" capture="environment" id="camera-input">
         </label>
@@ -108,9 +106,9 @@
        <a href="https://jotoba.de" target="_blank" rel="noopener">Jotoba</a>։
        Գրելու սխեմաները՝ <a href="https://kanjivg.tagaini.net" target="_blank" rel="noopener">KanjiVG</a>։
        Ձեռագիրը ճանաչում է Google-ը։ Ամբողջությամբ աշխատում է քո զննարկիչում։</p>
-    <p class="build-tag">Տարբերակ 10</p>
+    <p class="build-tag">Տարբերակ 11</p>
   </footer>
 
-  <script src="app.js?v=10" defer></script>
+  <script src="app.js?v=11" defer></script>
 </body>
 </html>

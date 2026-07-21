@@ -353,7 +353,48 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; }
 .kanji-top { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
 .kanji-glyph { font-size: 72px; line-height: 1; font-weight: 500; }
 .kanji-facts { flex: 1 1 220px; min-width: 0; }
-.kanji-meaning { font-size: 20px; font-weight: 700; margin: 0 0 8px; }
+
+/* Glyph + speaker */
+.glyph-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.speak-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px; height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.12s ease;
+}
+.speak-btn:hover { background: var(--accent-soft); transform: translateY(-1px); }
+.speak-btn:active { transform: scale(0.94); }
+
+/* Meaning block: EN / RU / HY */
+.meaning-block { margin: 0 0 8px; }
+.meaning-block.kanji-meaning { margin-bottom: 12px; }
+.m-line {
+  margin: 0 0 4px;
+  font-size: 16px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.m-line.m-en { font-size: 19px; font-weight: 700; }
+.lang {
+  flex: none;
+  min-width: 26px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 6px;
+  padding: 1px 5px;
+  text-align: center;
+  transform: translateY(-1px);
+}
 
 .readings { margin: 0; padding: 0; list-style: none; }
 .readings li { margin-bottom: 4px; }

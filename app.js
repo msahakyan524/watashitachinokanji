@@ -16,6 +16,12 @@ const isKatakana = (ch) => {
   const c = ch.codePointAt(0);
   return (c >= 0x30a0 && c <= 0x30ff) || (c >= 0xff66 && c <= 0xff9f); // incl. half-width
 };
+const isHiragana = (ch) => {
+  const c = ch.codePointAt(0);
+  return c >= 0x3040 && c <= 0x309f;
+};
+// any Japanese script (used to reject Latin letters from recognition)
+const isJapanese = (ch) => isKanji(ch) || isKatakana(ch) || isHiragana(ch);
 // a character worth looking up on its own: kanji or katakana
 const isLookup = (ch) => isKanji(ch) || isKatakana(ch);
 const esc = (s) =>
@@ -214,8 +220,70 @@ function makePassive(token) {
   return null;
 }
 
+/* ---------- translation: English meaning -> Russian + Armenian ---------- */
+const trCache = new Map();
+async function translate(text, target) {
+  const key = target + "|" + text;
+  if (trCache.has(key)) return trCache.get(key);
+  try {
+    const r = await fetch(
+      "https://api.mymemory.translated.net/get?q=" +
+        encodeURIComponent(text) + "&langpair=en%7C" + target
+    );
+    const j = await r.json();
+    const t = (j && j.responseData && j.responseData.translatedText) || "";
+    trCache.set(key, t);
+    return t;
+  } catch (e) {
+    return "";
+  }
+}
+
+/* ---------- speak Japanese out loud (built into the browser) ---------- */
+function speak(text) {
+  try {
+    if (!("speechSynthesis" in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "ja-JP";
+    u.rate = 0.9;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+const SPEAKER_SVG =
+  '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
+function speakerBtn(text) {
+  const b = el("button", "speak-btn", SPEAKER_SVG);
+  b.type = "button";
+  b.title = "Լսել արտասանությունը";
+  b.setAttribute("aria-label", "Լսել արտասանությունը");
+  b.addEventListener("click", (e) => { e.stopPropagation(); speak(text); });
+  return b;
+}
+
 /* ---------- rendering ---------- */
 const results = $("#results");
+
+/* Build a meaning block: English, then Russian, then Armenian (each copyable) */
+function meaningBlock(englishText, extraClass) {
+  const wrap = el("div", "meaning-block" + (extraClass ? " " + extraClass : ""));
+  const en = copyable(el("p", "m-line m-en",
+    '<span class="lang">EN</span>' + esc(englishText || "—")), englishText || "");
+  const ru = el("p", "m-line", '<span class="lang">RU</span><span class="spin"></span>');
+  const hy = el("p", "m-line", '<span class="lang">HY</span><span class="spin"></span>');
+  wrap.appendChild(en); wrap.appendChild(ru); wrap.appendChild(hy);
+  function fill(node, label, text) {
+    node.innerHTML = '<span class="lang">' + label + "</span>" + esc(text || "—");
+    if (text) copyable(node, text);
+  }
+  if (englishText) {
+    translate(englishText, "ru").then((t) => fill(ru, "RU", t));
+    translate(englishText, "hy").then((t) => fill(hy, "HY", t));
+  } else {
+    fill(ru, "RU", ""); fill(hy, "HY", "");
+  }
+  return wrap;
+}
 
 /* mark a node as tap-to-copy */
 function copyable(node, text) {
@@ -239,11 +307,14 @@ async function renderKanji(ch, container) {
   }
 
   const top = el("div", "kanji-top");
-  top.appendChild(copyable(el("div", "kanji-glyph", esc(ch)), ch));
+  const glyphWrap = el("div", "glyph-wrap");
+  glyphWrap.appendChild(copyable(el("div", "kanji-glyph", esc(ch)), ch));
+  glyphWrap.appendChild(speakerBtn(ch));
+  top.appendChild(glyphWrap);
 
   const facts = el("div", "kanji-facts");
-  const meaningText = info.meanings.join(", ") || "—";
-  facts.appendChild(copyable(el("p", "kanji-meaning", esc(meaningText)), meaningText));
+  const meaningText = info.meanings.join(", ");
+  facts.appendChild(meaningBlock(meaningText, "kanji-meaning"));
 
   const readings = el("ul", "readings");
   const onVals = info.on.length ? info.on.map((x) => "<span>" + esc(x) + "</span>").join("") : "—";
@@ -293,8 +364,11 @@ async function renderWord(surface, reading, opts = {}) {
   }
   const head = el("div", "word-head");
   head.appendChild(copyable(el("span", "word-surface", '<span lang="ja">' + esc(surface) + "</span>"), surface));
+  const readingSpan = el("span", "word-reading");
+  head.appendChild(readingSpan);
+  head.appendChild(speakerBtn(surface));
   block.appendChild(head);
-  const mp = el("p", "word-meaning", '<span class="spin"></span>Փնտրում եմ իմաստը…');
+  const mp = el("p", "word-meaning notice", '<span class="spin"></span>Փնտրում եմ իմաստը…');
   block.appendChild(mp);
   if (opts.passiveOf) {
     block.appendChild(el("p", "passive-note",
@@ -303,12 +377,11 @@ async function renderWord(surface, reading, opts = {}) {
   results.appendChild(block);
 
   const wm = await getWordMeaning(surface, reading);
-  if (wm) {
-    head.appendChild(el("span", "word-reading", '<span lang="ja">' + esc(wm.reading) + "</span>"));
-    mp.className = "word-meaning copyable";
-    mp.dataset.copy = wm.meaning || surface;
-    mp.title = "Սեղմիր՝ պատճենելու համար";
-    mp.textContent = wm.meaning || "(իմաստ չգտնվեց)";
+  // always show a reading (for katakana this is the kana itself)
+  const shownReading = (wm && wm.reading) || reading || (isKatakana(surface[0]) ? surface : "");
+  if (shownReading) readingSpan.innerHTML = '<span lang="ja">' + esc(shownReading) + "</span>";
+  if (wm && wm.meaning) {
+    mp.replaceWith(meaningBlock(wm.meaning));
   } else {
     mp.className = "word-meaning notice";
     mp.textContent = "Այս բառի իմաստը չգտնվեց։";
@@ -554,11 +627,14 @@ async function recognizeHandwriting(strokes, w, h) {
   if (!r.ok) throw new Error("ճանաչիչն անհասանելի է (" + r.status + ")");
   const j = await r.json();
   if (j[0] !== "SUCCESS") throw new Error("չհաջողվեց կարդալ նկարածը");
-  const cands = (j[1] && j[1][0] && j[1][0][1]) || [];
-  // put Japanese guesses (kanji or katakana) first, keep the rest as backups
+  let cands = (j[1] && j[1][0] && j[1][0][1]) || [];
+  // keep ONLY Japanese guesses — never show Latin letters like "T" or "+"
+  const jp = cands.filter((c) => [...c].every((ch) => isJapanese(ch)));
+  if (jp.length) cands = jp;
+  // kanji first, then kana
   return cands.sort((a, b) => {
-    const ak = [...a].some(isLookup) ? 0 : 1;
-    const bk = [...b].some(isLookup) ? 0 : 1;
+    const ak = [...a].some(isKanji) ? 0 : 1;
+    const bk = [...b].some(isKanji) ? 0 : 1;
     return ak - bk;
   });
 }
