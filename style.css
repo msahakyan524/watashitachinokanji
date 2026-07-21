@@ -83,6 +83,19 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; }
   margin: 0 0 8px;
   font-weight: 800;
 }
+.site-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.kanji-flower {
+  height: 2.1em;
+  width: auto;
+  vertical-align: middle;
+  filter: drop-shadow(0 2px 4px rgba(194, 24, 91, 0.18));
+}
 .site-head h1 span {
   display: block;
   font-size: 16px;
