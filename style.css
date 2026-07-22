@@ -78,10 +78,10 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; }
   text-align: center;
 }
 .site-head h1 {
-  font-size: 32px;
+  font-size: 2rem;
   line-height: 1.2;
   margin: 0 0 8px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .site-title {
   display: flex;
@@ -99,7 +99,7 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; }
 .site-head h1 span {
   display: block;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--accent);
@@ -136,7 +136,7 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; }
   border-radius: 999px;
   background: var(--card);
   color: var(--ink-soft);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
@@ -162,7 +162,7 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; }
   border-radius: 999px;
   background: var(--card);
   color: var(--ink);
-  font-size: 18px;
+  font-size: 1.125rem;
   cursor: pointer;
   transition: border-color 0.2s ease, transform 0.12s ease;
 }
@@ -191,7 +191,7 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; }
   border-radius: 999px;
   background: var(--card);
   color: var(--accent-ink);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -207,7 +207,7 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; }
   border-radius: 999px;
   background: var(--card);
   color: var(--accent-ink);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -222,7 +222,7 @@ body.flash-mode #results { display: none; }
 body.flash-mode #flash-view { display: block; }
 
 .flash-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.flash-head h2 { margin: 0; font-size: 24px; }
+.flash-head h2 { margin: 0; font-size: 16px; }
 
 .set-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
 .set-card {
@@ -231,7 +231,7 @@ body.flash-mode #flash-view { display: block; }
   border-radius: var(--radius); padding: 12px 16px; box-shadow: var(--shadow);
 }
 .set-card .set-info { flex: 1; min-width: 0; }
-.set-card .set-title { font-weight: 700; font-size: 18px; }
+.set-card .set-title { font-weight: 700; font-size: 16px; }
 .set-card .set-sub { color: var(--ink-soft); font-size: 14px; }
 .set-card.starred-set { background: var(--accent-soft); border-color: #f3c6da; }
 .set-flower { height: 1.5em; width: auto; vertical-align: -0.4em; margin-right: 4px; }
@@ -241,7 +241,7 @@ body.flash-mode #flash-view { display: block; }
   background: var(--card); border: 1px solid var(--line);
   border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow); margin-bottom: 20px;
 }
-.new-set summary { font-weight: 700; font-size: 18px; cursor: pointer; }
+.new-set summary { font-weight: 700; font-size: 16px; cursor: pointer; }
 .set-name {
   width: 100%; min-height: 44px; margin: 16px 0 12px; padding: 8px 16px;
   font-size: 16px; border: 1px solid var(--line); border-radius: 12px;
@@ -259,7 +259,7 @@ body.flash-mode #flash-view { display: block; }
 .kanji-grid:empty { display: none; }
 .kg-tile {
   aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-  font-size: 24px; border: 1px solid var(--line); border-radius: 10px;
+  font-size: 1.5rem; border: 1px solid var(--line); border-radius: 10px;
   background: #fff; cursor: pointer; user-select: none;
 }
 .kg-tile.sel { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -271,10 +271,10 @@ body.flash-mode #flash-view { display: block; }
   display: flex; align-items: center; justify-content: space-between;
   background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px;
 }
-.edit-ja { font-size: 22px; }
+.edit-ja { font-size: 1.375rem; }
 .edit-read { font-size: 16px; color: var(--accent-ink); }
 .edit-rm {
-  border: none; background: none; color: #c0392b; font-size: 20px;
+  border: none; background: none; color: #c0392b; font-size: 16px;
   cursor: pointer; width: 36px; height: 36px; line-height: 1;
 }
 .edit-rm:hover { color: #e74c3c; }
@@ -294,7 +294,7 @@ body.flash-mode #flash-view { display: block; }
 @keyframes fc-in { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: none; } }
 .flashcard.fc-enter { animation: fc-in 0.24s ease both; }
 @media (prefers-reduced-motion: reduce) { .flashcard.fc-enter { animation: none; } }
-.study-tip { text-align: center; color: var(--ink-soft); font-size: 13px; margin: 0 0 16px; }
+.study-tip { text-align: center; color: var(--ink-soft); font-size: 12px; margin: 0 0 16px; }
 .fc-inner {
   position: relative; width: 100%; height: 100%;
   transition: transform 0.5s; transform-style: preserve-3d;
@@ -309,19 +309,19 @@ body.flash-mode #flash-view { display: block; }
 }
 .fc-front { }
 .fc-back { transform: rotateY(180deg); }
-.fc-ja { font-size: 64px; line-height: 1.1; font-weight: 500; }
-.fc-ja.word { font-size: 44px; }
-.fc-ja-sm { font-size: 40px; line-height: 1.1; font-weight: 500; }
-.fc-ja-sm.word { font-size: 30px; }
+.fc-ja { font-size: 4rem; line-height: 1.1; font-weight: 400; }
+.fc-ja.word { font-size: 2.75rem; }
+.fc-ja-sm { font-size: 2.5rem; line-height: 1.1; font-weight: 400; }
+.fc-ja-sm.word { font-size: 1.875rem; }
 .fc-clickable { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 6px; }
 .fc-clickable:hover { color: var(--accent); }
 .fc-level {
   position: absolute; top: 10px; left: 12px;
   background: var(--accent); color: #fff;
-  font-size: 13px; font-weight: 700;
+  font-size: 12px; font-weight: 700;
   padding: 2px 9px; border-radius: 999px;
 }
-.fc-reading { font-size: 24px; color: var(--accent-ink); }
+.fc-reading { font-size: 16px; color: var(--accent-ink); }
 .fc-hint { color: var(--ink-soft); font-size: 14px; }
 .study-controls { margin-bottom: 16px; }
 
@@ -344,8 +344,8 @@ body.flash-mode #flash-view { display: block; }
   color: #fff;
   padding: 10px 18px;
   border-radius: 999px;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   box-shadow: var(--shadow);
   z-index: 50;
   animation: toast-in 0.2s ease;
@@ -368,7 +368,7 @@ body.flash-mode #flash-view { display: block; }
 }
 .file-field:hover { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-1px); }
 .file-field:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
-.file-emoji { font-size: 28px; line-height: 1; }
+.file-emoji { font-size: 1.75rem; line-height: 1; }
 .file-text { display: flex; flex-direction: column; font-weight: 700; }
 .file-text small { font-weight: 400; font-size: 14px; color: var(--ink-soft); }
 /* keep the real input usable but unobtrusive */
@@ -379,7 +379,7 @@ body.flash-mode #flash-view { display: block; }
   overflow: hidden;
 }
 .drop.dragover, .file-field.dragover { border-color: var(--accent); background: var(--accent-soft); }
-.drop-title { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+.drop-title { font-size: 16px; font-weight: 700; margin: 0 0 4px; }
 .drop-or { color: var(--ink-soft); margin: 0 0 16px; }
 
 @media (max-width: 420px) {
@@ -399,7 +399,7 @@ body.flash-mode #flash-view { display: block; }
   background: var(--card);
   color: var(--ink);
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
@@ -484,7 +484,7 @@ body.flash-mode #flash-view { display: block; }
   min-width: 52px;
   min-height: 52px;
   padding: 4px 10px;
-  font-size: 28px;
+  font-size: 1.75rem;
   line-height: 1;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -496,7 +496,7 @@ body.flash-mode #flash-view { display: block; }
 .cand-btn:hover { transform: translateY(-1px); border-color: var(--accent); }
 .cand-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 .status.error { color: #c0392b; }
-.review-label { display: block; margin: 16px 0 8px; font-weight: 600; }
+.review-label { display: block; margin: 16px 0 8px; font-weight: 700; }
 
 /* Spinner */
 .spin {
@@ -520,8 +520,8 @@ body.flash-mode #flash-view { display: block; }
   margin-bottom: 16px;
 }
 .word-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.word-surface { font-size: 32px; font-weight: 700; }
-.word-reading { color: var(--accent-ink); font-size: 20px; }
+.word-surface { font-size: 2rem; font-weight: 700; }
+.word-reading { color: var(--accent-ink); font-size: 16px; }
 .word-meaning { margin: 8px 0 0; }
 .passive-tag {
   display: inline-block;
@@ -545,7 +545,7 @@ body.flash-mode #flash-view { display: block; }
   margin-bottom: 16px;
 }
 .kanji-top { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
-.kanji-glyph { font-size: 72px; line-height: 1; font-weight: 500; }
+.kanji-glyph { font-size: 4.5rem; line-height: 1; font-weight: 400; }
 .kanji-facts { flex: 1 1 220px; min-width: 0; }
 
 /* Glyph + speaker */
@@ -576,11 +576,11 @@ body.flash-mode #flash-view { display: block; }
   align-items: baseline;
   gap: 8px;
 }
-.m-line.m-en { font-size: 19px; font-weight: 700; }
+.m-line.m-en { font-size: 16px; font-weight: 700; }
 .lang {
   flex: none;
   min-width: 26px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
   color: #fff;
@@ -619,7 +619,7 @@ body.flash-mode #flash-view { display: block; }
   border-top: 1px solid var(--line);
 }
 .ex-head { display: flex; align-items: center; gap: 10px; }
-.ex-word { font-size: 24px; font-weight: 600; }
+.ex-word { font-size: 1.5rem; font-weight: 700; }
 /* furigana (reading above the word) */
 .ex-word ruby { ruby-position: over; -webkit-ruby-position: over; }
 .ex-word rt {
@@ -629,7 +629,7 @@ body.flash-mode #flash-view { display: block; }
   letter-spacing: 0.02em;
 }
 .ex-meaning-block { margin-top: 6px; }
-.ex-meaning-block .m-line { font-size: 15px; }
+.ex-meaning-block .m-line { font-size: 14px; }
 .ex-meaning-block .m-line.m-en { font-size: 16px; }
 
 /* Stroke order */
@@ -666,8 +666,8 @@ body.flash-mode #flash-view { display: block; }
 .site-foot a { color: var(--accent); }
 
 @media (max-width: 420px) {
-  .site-head h1 { font-size: 24px; }
-  .kanji-glyph { font-size: 60px; }
+  .site-head h1 { font-size: 1.5rem; }
+  .kanji-glyph { font-size: 3.75rem; }
 }
 
 .build-tag { margin-top: 8px; font-weight: 700; color: var(--accent); }
