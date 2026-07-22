@@ -1622,7 +1622,7 @@ document.addEventListener("keydown", (e) => {
   if (tag === "input" || tag === "textarea") return;
   if (e.key === "ArrowRight") { e.preventDefault(); markCardAnimated(true); }
   else if (e.key === "ArrowLeft") { e.preventDefault(); markCardAnimated(false); }
-  else if (e.key === " " || e.code === "Space") { e.preventDefault(); flipCard(); }
+  else if (e.key === " " || e.code === "Space" || e.key === "Enter") { e.preventDefault(); flipCard(); }
 });
 
 renderSetList();
